@@ -1,3 +1,7 @@
+'use client';
+
+import { useState } from 'react';
+
 const stats = [
   { label: 'Avg queue time', value: '11 min', color: 'bg-emerald-50 text-emerald-700' },
   { label: 'SLA compliance', value: '96.4%', color: 'bg-blue-50 text-blue-700' },
@@ -14,7 +18,50 @@ const modules = [
   'Analytics and CRM integration',
 ];
 
+const workflows = [
+  { value: 'appointment', label: 'Appointment Agent' },
+  { value: 'queue', label: 'Queue Optimization Agent' },
+  { value: 'support', label: 'Customer Support Agent' },
+  { value: 'analytics', label: 'Analytics Agent' },
+  { value: 'notification', label: 'Notification Agent' },
+];
+
 export default function HomePage() {
+  const [selectedWorkflow, setSelectedWorkflow] = useState('appointment');
+  const [payload, setPayload] = useState('branch=Downtown&slot=09:00');
+  const [result, setResult] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const runAgent = async () => {
+    setLoading(true);
+    setResult('');
+
+    const parsedPayload: Record<string, string> = {};
+    payload.split('&').forEach((pair) => {
+      const [key, value] = pair.split('=');
+      if (key && value) {
+        parsedPayload[key] = value;
+      }
+    });
+
+    try {
+      const response = await fetch('http://localhost:8000/api/v1/ai/orchestrate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ workflow: selectedWorkflow, payload: parsedPayload }),
+      });
+
+      const data = await response.json();
+      setResult(`${data.agent}: ${data.result}`);
+    } catch (error) {
+      setResult('Unable to reach the backend AI orchestration service. Make sure the backend is running on port 8000.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen px-6 py-10 text-slate-900">
       <div className="mx-auto max-w-7xl">
@@ -23,12 +70,15 @@ export default function HomePage() {
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-600">Smart Queue Management</p>
             <h1 className="mt-2 text-3xl font-black">BookMyQ</h1>
           </div>
-          <button className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-700">
+          <a
+            href="#demo"
+            className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-900/10 transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400"
+          >
             Book demo
-          </button>
+          </a>
         </header>
 
-        <section className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+        <section id="demo" className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
           <div className="rounded-3xl bg-slate-900 p-8 text-white shadow-soft">
             <p className="mb-3 text-sm uppercase tracking-[0.2em] text-cyan-300">Enterprise SaaS platform</p>
             <h2 className="max-w-xl text-4xl font-black leading-tight">
@@ -38,8 +88,18 @@ export default function HomePage() {
               BookMyQ powers multi-location queue orchestration for hospitals, banks, clinics, government offices, and service centers through AI-assisted scheduling, live dashboards, and customer-centric self-service.
             </p>
             <div className="mt-8 flex gap-3">
-              <button className="rounded-xl bg-cyan-400 px-5 py-3 font-semibold text-slate-900">Get started</button>
-              <button className="rounded-xl border border-slate-700 px-5 py-3 font-semibold text-white">View product</button>
+              <a
+                href="#demo"
+                className="rounded-xl bg-cyan-400 px-5 py-3 font-semibold text-slate-900 transition hover:bg-cyan-300 focus:outline-none focus:ring-2 focus:ring-cyan-200"
+              >
+                Get started
+              </a>
+              <a
+                href="#product"
+                className="rounded-xl border border-slate-700 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-400"
+              >
+                View product
+              </a>
             </div>
           </div>
 
@@ -61,13 +121,65 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <section id="product" className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           {stats.map((stat) => (
             <div key={stat.label} className={`${stat.color} rounded-2xl p-4 shadow-soft`}>
               <div className="text-2xl font-black">{stat.value}</div>
               <div className="mt-2 text-sm font-medium">{stat.label}</div>
             </div>
           ))}
+        </section>
+
+        <section className="mt-12 rounded-3xl border border-slate-200 bg-white p-6 shadow-soft">
+          <div className="mb-5 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">AI Agent Console</p>
+              <h3 className="mt-2 text-2xl font-black text-slate-900">Run a workflow</h3>
+            </div>
+            <button
+              type="button"
+              onClick={runAgent}
+              disabled={loading}
+              className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loading ? 'Running...' : 'Run agent'}
+            </button>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-[220px_1fr]">
+            <div className="space-y-2">
+              {workflows.map((workflow) => (
+                <button
+                  key={workflow.value}
+                  type="button"
+                  onClick={() => setSelectedWorkflow(workflow.value)}
+                  className={`w-full rounded-xl border px-3 py-2 text-left text-sm font-medium transition ${
+                    selectedWorkflow === workflow.value
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'
+                  }`}
+                >
+                  {workflow.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-slate-600">
+                Payload
+                <textarea
+                  value={payload}
+                  onChange={(event) => setPayload(event.target.value)}
+                  rows={4}
+                  className="mt-2 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 outline-none ring-0 transition focus:border-blue-500"
+                />
+              </label>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+                {result || 'No result yet. Choose a workflow and run the agent.'}
+              </div>
+            </div>
+          </div>
         </section>
 
         <section className="mt-12 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">

@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.ai.orchestrator import AgentOrchestrator
 from app.config import get_settings
+from app.routers.ai import router as ai_router
 from app.routers.appointments import router as appointments_router
 from app.routers.queues import router as queues_router
 from app.routers.tenants import router as tenants_router
@@ -22,6 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(ai_router, prefix=settings.api_v1_prefix)
 app.include_router(tenants_router, prefix=settings.api_v1_prefix)
 app.include_router(queues_router, prefix=settings.api_v1_prefix)
 app.include_router(appointments_router, prefix=settings.api_v1_prefix)
