@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookmyq-backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bookmyq-backend
+  template:
+    metadata:
+      labels:
+        app: bookmyq-backend
+    spec:
+      containers:
+        - name: backend
+          image: bookmyq/backend:latest
+          ports:
+            - containerPort: 8000
+          env:
+            - name: POSTGRES_URL
+              value: postgresql+psycopg://postgres:postgres@postgres:5432/bookmyq
+            - name: REDIS_URL
+              value: redis://redis:6379/0
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookmyq-backend
+spec:
+  selector:
+    app: bookmyq-backend
+  ports:
+    - port: 80
+      targetPort: 8000
